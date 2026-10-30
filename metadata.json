@@ -1,0 +1,5 @@
+{
+  "name": "Générateur de Checklist Formateur",
+  "description": "Application interactive pour construire une checklist de préparation logistique pour les formateurs.",
+  "requestFramePermissions": []
+}

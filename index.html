@@ -1,0 +1,1346 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ma checklist de préparation — Formation</title>
+    <meta name="description" content="Application interactive pour construire une checklist personnalisée de préparation logistique pour formateurs." />
+
+    <!-- Google Fonts: Fira Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+
+    <!-- CDN Libraries for standalone PDF export (html2canvas & jsPDF) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+      :root {
+        --color-accent: #810464;
+        --color-accent-hover: #6a0352;
+        --color-accent-light: rgba(129, 4, 100, 0.08);
+        --color-accent-border: rgba(129, 4, 100, 0.25);
+        --color-bg: #f9fafb;
+        --color-card-bg: #ffffff;
+        --color-text-main: #111827;
+        --color-text-secondary: #4b5563;
+        --color-text-muted: #9ca3af;
+        --color-border: #e5e7eb;
+        --color-border-subtle: #f3f4f6;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+        --shadow-accent: 0 10px 20px -3px rgba(129, 4, 100, 0.35);
+        --radius-lg: 1rem;
+        --radius-xl: 1.25rem;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Fira Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background-color: var(--color-bg);
+        color: var(--color-text-main);
+        line-height: 1.5;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Container */
+      .app-container {
+        max-width: 56rem; /* max-w-4xl */
+        margin: 0 auto;
+        padding: 0 1rem;
+      }
+
+      /* Sticky App Header */
+      .app-header {
+        background-color: #ffffff;
+        border-bottom: 1px solid var(--color-border);
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .header-content {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 1rem 0;
+      }
+
+      .app-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--color-text-main);
+        letter-spacing: -0.02em;
+      }
+
+      @media (min-width: 640px) {
+        .app-title {
+          font-size: 1.75rem;
+        }
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      /* Counter Badge */
+      .counter-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background-color: var(--color-accent-light);
+        color: var(--color-accent);
+        padding: 0.45rem 1rem;
+        border-radius: 9999px;
+        font-weight: 600;
+        font-size: 0.925rem;
+      }
+
+      /* Fullscreen button */
+      .fullscreen-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background-color: #ffffff;
+        color: var(--color-text-secondary);
+        border: 1.5px solid var(--color-border);
+        padding: 0.45rem 0.9rem;
+        border-radius: 0.6rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .fullscreen-btn:hover {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
+        background-color: var(--color-accent-light);
+      }
+
+      /* Main Content Area */
+      .main-content {
+        padding: 2rem 0 6rem 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+      }
+
+      /* Instructions Box */
+      .instruction-box {
+        background-color: #ffffff;
+        border-left: 4px solid var(--color-accent);
+        padding: 1.25rem 1.5rem;
+        border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+
+      .instruction-icon {
+        background-color: var(--color-accent-light);
+        color: var(--color-accent);
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .instruction-text {
+        color: var(--color-text-secondary);
+        font-size: 1rem;
+        line-height: 1.6;
+      }
+
+      /* Section Cards */
+      .section-card {
+        background-color: var(--color-card-bg);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        border: 1px solid var(--color-border-subtle);
+        transition: box-shadow 0.2s ease;
+      }
+
+      .section-card:hover {
+        box-shadow: var(--shadow-lg);
+      }
+
+      .section-header {
+        background-color: var(--color-accent);
+        color: #ffffff;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .section-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+
+      .add-item-btn {
+        background: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+        border: none;
+        padding: 0.4rem 0.85rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+      }
+
+      .add-item-btn:hover {
+        background: rgba(255, 255, 255, 0.32);
+        transform: translateY(-1px);
+      }
+
+      .section-body {
+        padding: 1.5rem;
+      }
+
+      .section-example {
+        color: var(--color-text-muted);
+        font-style: italic;
+        font-size: 0.875rem;
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      /* Items List */
+      .items-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      /* Single Item Row */
+      .item-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 0.85rem;
+        border-radius: 0.75rem;
+        border: 1.5px solid var(--color-border-subtle);
+        background-color: #ffffff;
+        transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .item-row:hover {
+        border-color: var(--color-accent);
+        background-color: #faf7fb;
+        box-shadow: 0 3px 8px rgba(129, 4, 100, 0.1);
+      }
+
+      .item-row.dragging {
+        opacity: 0.4;
+        border: 2px dashed var(--color-accent);
+        background-color: var(--color-accent-light);
+      }
+
+      .item-row.drag-over {
+        border-top: 3px solid var(--color-accent);
+      }
+
+      .drag-handle {
+        color: #cbd5e1;
+        cursor: grab;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.15s ease;
+        padding: 0.15rem;
+      }
+
+      .drag-handle:hover {
+        color: var(--color-accent);
+      }
+
+      .drag-handle:active {
+        cursor: grabbing;
+      }
+
+      /* Checkbox */
+      .item-checkbox {
+        width: 1.25rem;
+        height: 1.25rem;
+        accent-color: var(--color-accent);
+        cursor: pointer;
+        border-radius: 0.25rem;
+        flex-shrink: 0;
+      }
+
+      /* Text Input */
+      .item-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-family: inherit;
+        font-size: 1rem;
+        color: var(--color-text-main);
+        padding: 0.2rem 0;
+        transition: color 0.15s ease;
+      }
+
+      .item-input::placeholder {
+        color: #d1d5db;
+      }
+
+      .item-input.checked {
+        text-decoration: line-through;
+        color: var(--color-text-muted);
+      }
+
+      /* Delete Button (Trash) */
+      .delete-btn {
+        background: none;
+        border: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        padding: 0.3rem;
+        border-radius: 0.375rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.15s ease, background-color 0.15s ease;
+      }
+
+      .delete-btn:hover {
+        color: #ef4444;
+        background-color: #fee2e2;
+      }
+
+      /* Empty State */
+      .empty-state {
+        text-align: center;
+        padding: 2rem 1rem;
+        border: 2px dashed #e5e7eb;
+        border-radius: 1rem;
+        color: var(--color-text-muted);
+        font-size: 0.95rem;
+      }
+
+      /* Primary Finished Button */
+      .footer-action {
+        display: flex;
+        justify-content: center;
+        padding-top: 1rem;
+      }
+
+      .btn-primary {
+        background-color: var(--color-accent);
+        color: #ffffff;
+        padding: 1rem 2.5rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        font-size: 1.125rem;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        box-shadow: var(--shadow-accent);
+        transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .btn-primary:hover {
+        opacity: 0.93;
+        transform: translateY(-2px);
+        box-shadow: 0 14px 24px -4px rgba(129, 4, 100, 0.45);
+      }
+
+      .btn-primary:active {
+        transform: translateY(0);
+      }
+
+      /* Floating Action Button for Mobile */
+      .mobile-fab {
+        display: none;
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        z-index: 50;
+        background-color: var(--color-accent);
+        color: #ffffff;
+        border: none;
+        border-radius: 9999px;
+        padding: 1rem;
+        box-shadow: 0 10px 25px rgba(129, 4, 100, 0.5);
+        cursor: pointer;
+      }
+
+      @media (max-width: 768px) {
+        .mobile-fab {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      }
+
+      /* ========================================================= */
+      /* PREVIEW VIEW STYLES                                       */
+      /* ========================================================= */
+      #preview-view {
+        display: none;
+        background-color: #ffffff;
+        min-height: 100vh;
+        padding-bottom: 6rem;
+      }
+
+      .preview-nav {
+        margin-bottom: 2rem;
+        padding-top: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--color-text-secondary);
+        background: transparent;
+        border: none;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        padding: 0.4rem 0.6rem;
+        border-radius: 0.5rem;
+        transition: color 0.15s ease, background-color 0.15s ease;
+      }
+
+      .btn-back:hover {
+        color: var(--color-accent);
+        background-color: var(--color-accent-light);
+      }
+
+      /* Print Area container */
+      .print-area {
+        background: #ffffff;
+        padding: 1.5rem 0.5rem;
+      }
+
+      .preview-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+        border-bottom: 1px solid var(--color-border);
+        padding-bottom: 1.5rem;
+      }
+
+      .preview-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--color-text-main);
+        margin-bottom: 0.5rem;
+      }
+
+      .preview-date {
+        color: var(--color-text-muted);
+        font-size: 1rem;
+      }
+
+      .preview-sections {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+      }
+
+      .preview-card {
+        border: 1px solid var(--color-border);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        background-color: #ffffff;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .preview-card-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        color: var(--color-text-main);
+      }
+
+      .preview-accent-dot {
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 9999px;
+        background-color: var(--color-accent);
+        display: inline-block;
+        flex-shrink: 0;
+      }
+
+      .preview-items-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding-left: 1.4rem;
+      }
+
+      .preview-item-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+
+      /* Empty check square for printing */
+      .preview-checkbox-box {
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 2px solid #9ca3af;
+        border-radius: 0.25rem;
+        margin-top: 0.15rem;
+        flex-shrink: 0;
+        background-color: #ffffff;
+      }
+
+      .preview-item-text {
+        color: #1f2937;
+        font-size: 1rem;
+        line-height: 1.5;
+      }
+
+      .preview-empty-text {
+        color: var(--color-text-muted);
+        font-style: italic;
+        font-size: 0.95rem;
+      }
+
+      /* Preview Action Buttons */
+      .preview-actions {
+        margin-top: 3rem;
+        display: flex;
+        flex-direction: column;
+        sm-flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      @media (min-width: 640px) {
+        .preview-actions {
+          flex-direction: row;
+        }
+      }
+
+      .btn-download-pdf {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        background-color: #ffffff;
+        border: 2px solid var(--color-accent);
+        color: var(--color-accent);
+        padding: 0.9rem 2rem;
+        border-radius: 9999px;
+        font-size: 1.125rem;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.2s ease;
+      }
+
+      .btn-download-pdf:hover {
+        background-color: var(--color-accent-light);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .btn-print {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        background-color: var(--color-accent);
+        border: 2px solid var(--color-accent);
+        color: #ffffff;
+        padding: 0.9rem 2rem;
+        border-radius: 9999px;
+        font-size: 1.125rem;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: var(--shadow-accent);
+        transition: all 0.2s ease;
+      }
+
+      .btn-print:hover {
+        opacity: 0.93;
+        transform: translateY(-2px);
+        box-shadow: 0 14px 24px -4px rgba(129, 4, 100, 0.45);
+      }
+
+      /* Notification toast */
+      .toast {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background-color: #1f2937;
+        color: #ffffff;
+        padding: 0.75rem 1.5rem;
+        border-radius: 9999px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 100;
+        pointer-events: none;
+      }
+
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+
+      /* ========================================================= */
+      /* PRINT STYLES (@media print)                               */
+      /* ========================================================= */
+      @media print {
+        body {
+          background-color: #ffffff !important;
+          color: #000000 !important;
+        }
+
+        .no-print,
+        .app-header,
+        .preview-nav,
+        .preview-actions,
+        .mobile-fab,
+        .toast {
+          display: none !important;
+        }
+
+        #edit-view {
+          display: none !important;
+        }
+
+        #preview-view {
+          display: block !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+
+        .app-container {
+          max-width: 100% !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+
+        .print-area {
+          padding: 0 !important;
+        }
+
+        .preview-header {
+          margin-bottom: 1.5rem !important;
+          padding-bottom: 1rem !important;
+        }
+
+        .preview-card {
+          border: 1px solid #d1d5db !important;
+          box-shadow: none !important;
+          break-inside: avoid !important;
+          page-break-inside: avoid !important;
+          margin-bottom: 1rem !important;
+          padding: 1rem !important;
+        }
+
+        .preview-accent-dot {
+          background-color: #000000 !important;
+        }
+
+        .preview-checkbox-box {
+          border: 2px solid #000000 !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- TOAST MESSAGE -->
+    <div id="toast" class="toast">Action effectuée</div>
+
+    <!-- ========================================================= -->
+    <!-- EDIT VIEW (Main interactive builder)                      -->
+    <!-- ========================================================= -->
+    <div id="edit-view">
+      <!-- App Header -->
+      <header class="app-header">
+        <div class="app-container">
+          <div class="header-content">
+            <h1 class="app-title">Ma checklist de préparation — Formation</h1>
+            
+            <div class="header-actions">
+              <!-- Item Counter -->
+              <div class="counter-badge" title="Nombre total d'éléments">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 11 12 14 22 4"></polyline>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                <span id="total-counter">0 élément</span>
+              </div>
+
+              <!-- Fullscreen Button -->
+              <button id="fullscreen-btn" class="fullscreen-btn" onclick="toggleFullscreen()" title="Basculer en plein écran" aria-label="Basculer en plein écran">
+                <svg id="fullscreen-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                </svg>
+                <span id="fullscreen-text">Plein écran</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-container main-content">
+        <!-- Educational Instruction Banner -->
+        <section class="instruction-box" aria-label="Consignes">
+          <div class="instruction-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </div>
+          <p class="instruction-text">
+            Construisez votre propre checklist en ajoutant, pour chaque catégorie, les éléments que vous devez vérifier avant votre formation. Une fois terminé, cliquez sur <strong>"Terminé"</strong> pour télécharger votre checklist prête à imprimer.
+          </p>
+        </section>
+
+        <!-- The 5 Stacked Category Cards -->
+        <div id="sections-container" style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <!-- Rendered dynamically by JavaScript -->
+        </div>
+
+        <!-- Finished Button at bottom -->
+        <div class="footer-action">
+          <button class="btn-primary" onclick="showPreview()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            Terminé
+          </button>
+        </div>
+      </main>
+
+      <!-- Floating Button for small screens -->
+      <button class="mobile-fab" onclick="showPreview()" title="Voir l'aperçu et exporter" aria-label="Terminé">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </button>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- PREVIEW & EXPORT VIEW                                     -->
+    <!-- ========================================================= -->
+    <div id="preview-view">
+      <div class="app-container">
+        <!-- Navigation bar -->
+        <div class="preview-nav no-print">
+          <button class="btn-back" onclick="hidePreview()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Retour à l'édition
+          </button>
+
+          <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Basculer en plein écran">
+            <svg class="preview-fs-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+            </svg>
+            <span class="preview-fs-text">Plein écran</span>
+          </button>
+        </div>
+
+        <!-- Printable Document Area -->
+        <div id="print-area" class="print-area">
+          <header class="preview-header">
+            <h1 class="preview-title">Ma checklist personnalisée</h1>
+            <p id="preview-date-label" class="preview-date">Créée le ...</p>
+          </header>
+
+          <div id="preview-sections-container" class="preview-sections">
+            <!-- Rendered dynamically by JavaScript -->
+          </div>
+        </div>
+
+        <!-- Action Buttons: Download PDF & Print -->
+        <div class="preview-actions no-print">
+          <button class="btn-download-pdf" onclick="handleDownloadPDF()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Télécharger (PDF)
+          </button>
+
+          <button class="btn-print" onclick="handlePrint()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Imprimer
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- JAVASCRIPT LOGIC (Vanilla JS)                             -->
+    <!-- ========================================================= -->
+    <script>
+      // 1. Definition of the 5 Pedagogical Sections
+      const SECTIONS = [
+        {
+          id: 'lieu',
+          title: 'Le lieu',
+          example: "J'ai vérifié l'accessibilité du lieu (accès PMR, signalétique)"
+        },
+        {
+          id: 'outils',
+          title: 'Les outils et équipements',
+          example: "J'ai testé le vidéoprojecteur et la connectique avant la séance"
+        },
+        {
+          id: 'ressources',
+          title: 'Les ressources à prévoir',
+          example: "J'ai imprimé les supports de formation en nombre suffisant"
+        },
+        {
+          id: 'temporel',
+          title: 'Les contraintes temporelles',
+          example: "J'ai prévu des pauses régulières toutes les 90 minutes"
+        },
+        {
+          id: 'handicap',
+          title: 'Les adaptations aux situations de handicap',
+          example: "J'ai identifié en amont les besoins spécifiques des participants"
+        }
+      ];
+
+      // LocalStorage Key for offline persistence
+      const STORAGE_KEY = 'checklist_formation_items_v2';
+
+      // Application State
+      let state = {
+        items: {
+          lieu: [],
+          outils: [],
+          ressources: [],
+          temporel: [],
+          handicap: []
+        },
+        dragged: null // { sectionId, index }
+      };
+
+      // Toast notification helper
+      function showToast(message) {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => {
+          toast.classList.remove('show');
+        }, 2600);
+      }
+
+      // Load saved state from LocalStorage
+      function loadSavedState() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            SECTIONS.forEach(sec => {
+              if (Array.isArray(parsed[sec.id])) {
+                state.items[sec.id] = parsed[sec.id];
+              }
+            });
+          }
+        } catch (e) {
+          console.warn('Impossible de charger les données sauvegardées:', e);
+        }
+      }
+
+      // Save state to LocalStorage
+      function persistState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
+        } catch (e) {
+          console.warn('Impossible de sauvegarder les données:', e);
+        }
+        updateCounter();
+      }
+
+      // Calculate total item count
+      function getTotalItemsCount() {
+        return Object.values(state.items).reduce((acc, list) => acc + (list ? list.length : 0), 0);
+      }
+
+      // Update counter UI badge
+      function updateCounter() {
+        const count = getTotalItemsCount();
+        const badge = document.getElementById('total-counter');
+        if (badge) {
+          badge.textContent = `${count} élément${count > 1 ? 's' : ''}`;
+        }
+      }
+
+      // Fullscreen toggle functionality
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(err => {
+            showToast("Le mode plein écran n'est pas autorisé par le navigateur.");
+          });
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          }
+        }
+      }
+
+      function updateFullscreenButtons() {
+        const isFs = !!document.fullscreenElement;
+        const mainText = document.getElementById('fullscreen-text');
+        const mainIcon = document.getElementById('fullscreen-icon');
+        const previewTexts = document.querySelectorAll('.preview-fs-text');
+        const previewIcons = document.querySelectorAll('.preview-fs-icon');
+
+        const label = isFs ? "Quitter le plein écran" : "Plein écran";
+        const iconPaths = isFs
+          ? '<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>'
+          : '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>';
+
+        if (mainText) mainText.textContent = label;
+        if (mainIcon) mainIcon.innerHTML = iconPaths;
+        previewTexts.forEach(el => el.textContent = label);
+        previewIcons.forEach(el => el.innerHTML = iconPaths);
+      }
+
+      document.addEventListener('fullscreenchange', updateFullscreenButtons);
+
+      // Add item to a section
+      function addItem(sectionId, afterIndex) {
+        const newId = 'item_' + Math.random().toString(36).substring(2, 11);
+        const newItem = {
+          id: newId,
+          text: '',
+          checked: false
+        };
+
+        const list = state.items[sectionId];
+        if (typeof afterIndex === 'number' && afterIndex >= 0 && afterIndex < list.length) {
+          list.splice(afterIndex + 1, 0, newItem);
+        } else {
+          list.push(newItem);
+        }
+
+        persistState();
+        renderSections();
+
+        // Focus the newly created input field automatically
+        setTimeout(() => {
+          const inputEl = document.getElementById(`input-${newId}`);
+          if (inputEl) {
+            inputEl.focus();
+          }
+        }, 30);
+      }
+
+      // Update item properties (text, checked)
+      function updateItemText(sectionId, itemId, newText) {
+        const item = state.items[sectionId].find(i => i.id === itemId);
+        if (item) {
+          item.text = newText;
+          persistState();
+        }
+      }
+
+      function toggleItemChecked(sectionId, itemId, checked) {
+        const item = state.items[sectionId].find(i => i.id === itemId);
+        if (item) {
+          item.checked = checked;
+          persistState();
+          const inputEl = document.getElementById(`input-${itemId}`);
+          if (inputEl) {
+            if (checked) {
+              inputEl.classList.add('checked');
+            } else {
+              inputEl.classList.remove('checked');
+            }
+          }
+        }
+      }
+
+      // Delete item
+      function deleteItem(sectionId, itemId) {
+        state.items[sectionId] = state.items[sectionId].filter(i => i.id !== itemId);
+        persistState();
+        renderSections();
+      }
+
+      // HTML5 Drag and Drop handlers
+      function handleDragStart(e, sectionId, index) {
+        state.dragged = { sectionId, index };
+        e.dataTransfer.effectAllowed = 'move';
+        e.currentTarget.classList.add('dragging');
+      }
+
+      function handleDragOver(e, sectionId, index) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const row = e.currentTarget;
+        if (state.dragged && state.dragged.sectionId === sectionId) {
+          row.classList.add('drag-over');
+        }
+      }
+
+      function handleDragLeave(e) {
+        e.currentTarget.classList.remove('drag-over');
+      }
+
+      function handleDragEnd(e) {
+        e.currentTarget.classList.remove('dragging');
+        document.querySelectorAll('.item-row').forEach(row => row.classList.remove('drag-over'));
+        state.dragged = null;
+      }
+
+      function handleDrop(e, sectionId, dropIndex) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+        if (!state.dragged || state.dragged.sectionId !== sectionId) return;
+
+        const list = state.items[sectionId];
+        const [movedItem] = list.splice(state.dragged.index, 1);
+        list.splice(dropIndex, 0, movedItem);
+
+        state.dragged = null;
+        persistState();
+        renderSections();
+      }
+
+      // Escape HTML to prevent injection
+      function escapeHtml(str) {
+        if (!str) return '';
+        return str
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      // Render all 5 category sections in Edit View
+      function renderSections() {
+        const container = document.getElementById('sections-container');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        SECTIONS.forEach(section => {
+          const sectionItems = state.items[section.id] || [];
+
+          const card = document.createElement('div');
+          card.className = 'section-card';
+          card.id = `card-${section.id}`;
+
+          // Header
+          const header = document.createElement('div');
+          header.className = 'section-header';
+          header.innerHTML = `
+            <h2 class="section-title">${section.title}</h2>
+            <button class="add-item-btn" onclick="addItem('${section.id}')" title="Ajouter un élément dans ${section.title}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Ajouter
+            </button>
+          `;
+          card.appendChild(header);
+
+          // Body
+          const body = document.createElement('div');
+          body.className = 'section-body';
+
+          // Guiding example
+          const example = document.createElement('p');
+          example.className = 'section-example';
+          example.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span>Exemple : ${section.example}</span>
+          `;
+          body.appendChild(example);
+
+          // Items or Empty State
+          if (sectionItems.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.textContent = 'Ajoutez vos éléments à vérifier';
+            body.appendChild(empty);
+          } else {
+            const list = document.createElement('div');
+            list.className = 'items-list';
+
+            sectionItems.forEach((item, index) => {
+              const row = document.createElement('div');
+              row.className = 'item-row';
+              row.draggable = true;
+              row.setAttribute('data-id', item.id);
+
+              // Drag Events
+              row.addEventListener('dragstart', (e) => handleDragStart(e, section.id, index));
+              row.addEventListener('dragover', (e) => handleDragOver(e, section.id, index));
+              row.addEventListener('dragleave', handleDragLeave);
+              row.addEventListener('dragend', handleDragEnd);
+              row.addEventListener('drop', (e) => handleDrop(e, section.id, index));
+
+              // Grip handle
+              const grip = document.createElement('div');
+              grip.className = 'drag-handle';
+              grip.title = 'Glisser pour réorganiser';
+              grip.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="9" cy="12" r="1"></circle>
+                  <circle cx="9" cy="5" r="1"></circle>
+                  <circle cx="9" cy="19" r="1"></circle>
+                  <circle cx="15" cy="12" r="1"></circle>
+                  <circle cx="15" cy="5" r="1"></circle>
+                  <circle cx="15" cy="19" r="1"></circle>
+                </svg>
+              `;
+              row.appendChild(grip);
+
+              // Checkbox
+              const checkbox = document.createElement('input');
+              checkbox.type = 'checkbox';
+              checkbox.className = 'item-checkbox';
+              checkbox.checked = !!item.checked;
+              checkbox.title = 'Marquer comme vérifié';
+              checkbox.addEventListener('change', (e) => {
+                toggleItemChecked(section.id, item.id, e.target.checked);
+              });
+              row.appendChild(checkbox);
+
+              // Text input
+              const input = document.createElement('input');
+              input.type = 'text';
+              input.id = `input-${item.id}`;
+              input.className = `item-input ${item.checked ? 'checked' : ''}`;
+              input.value = item.text || '';
+              input.placeholder = "J'ai vérifié que...";
+              input.addEventListener('input', (e) => {
+                updateItemText(section.id, item.id, e.target.value);
+              });
+              input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addItem(section.id, index);
+                }
+              });
+              row.appendChild(input);
+
+              // Delete button (trash icon always present)
+              const deleteBtn = document.createElement('button');
+              deleteBtn.className = 'delete-btn';
+              deleteBtn.title = 'Supprimer cette ligne';
+              deleteBtn.innerHTML = `
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+              `;
+              deleteBtn.addEventListener('click', () => {
+                deleteItem(section.id, item.id);
+              });
+              row.appendChild(deleteBtn);
+
+              list.appendChild(row);
+            });
+
+            body.appendChild(list);
+          }
+
+          card.appendChild(body);
+          container.appendChild(card);
+        });
+
+        updateCounter();
+      }
+
+      // Show Preview Mode
+      function showPreview() {
+        const editView = document.getElementById('edit-view');
+        const previewView = document.getElementById('preview-view');
+        if (!editView || !previewView) return;
+
+        // Set date
+        const dateEl = document.getElementById('preview-date-label');
+        if (dateEl) {
+          const now = new Date();
+          const formattedDate = now.toLocaleDateString('fr-FR', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          });
+          dateEl.textContent = `Créée le ${formattedDate}`;
+        }
+
+        // Render preview content
+        const previewContainer = document.getElementById('preview-sections-container');
+        if (previewContainer) {
+          previewContainer.innerHTML = '';
+
+          SECTIONS.forEach(section => {
+            // Filter out empty items
+            const nonBlankItems = (state.items[section.id] || []).filter(item => item.text && item.text.trim() !== '');
+
+            const card = document.createElement('div');
+            card.className = 'preview-card';
+
+            const title = document.createElement('h2');
+            title.className = 'preview-card-title';
+            title.innerHTML = `
+              <span class="preview-accent-dot"></span>
+              <span>${section.title}</span>
+            `;
+            card.appendChild(title);
+
+            const list = document.createElement('div');
+            list.className = 'preview-items-list';
+
+            if (nonBlankItems.length > 0) {
+              nonBlankItems.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'preview-item-row';
+                row.innerHTML = `
+                  <div class="preview-checkbox-box"></div>
+                  <span class="preview-item-text">${escapeHtml(item.text)}</span>
+                `;
+                list.appendChild(row);
+              });
+            } else {
+              const empty = document.createElement('p');
+              empty.className = 'preview-empty-text';
+              empty.textContent = 'Aucun élément ajouté dans cette section.';
+              list.appendChild(empty);
+            }
+
+            card.appendChild(list);
+            previewContainer.appendChild(card);
+          });
+        }
+
+        editView.style.display = 'none';
+        previewView.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Return to Edit View
+      function hidePreview() {
+        const editView = document.getElementById('edit-view');
+        const previewView = document.getElementById('preview-view');
+        if (!editView || !previewView) return;
+
+        previewView.style.display = 'none';
+        editView.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Print function
+      function handlePrint() {
+        window.print();
+      }
+
+      // Download PDF function
+      async function handleDownloadPDF() {
+        const element = document.getElementById('print-area');
+        if (!element) return;
+
+        showToast("Génération du PDF en cours...");
+
+        // Check if html2canvas and jsPDF are loaded
+        if (typeof window.html2canvas === 'function' && window.jspdf && window.jspdf.jsPDF) {
+          try {
+            const canvas = await window.html2canvas(element, {
+              scale: 2,
+              useCORS: true,
+              logging: false,
+              backgroundColor: '#ffffff'
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            pdf.save(`Ma_Checklist_Formation_${yyyy}-${mm}-${dd}.pdf`);
+
+            showToast("PDF téléchargé avec succès !");
+            return;
+          } catch (err) {
+            console.error('Erreur lors de la génération avec html2canvas:', err);
+          }
+        }
+
+        // Fallback: If external scripts were blocked or unavailable, open print dialog
+        showToast("Ouverture de la fenêtre d'impression pour enregistrer en PDF...");
+        window.print();
+      }
+
+      // Initialize Application on Page Load
+      document.addEventListener('DOMContentLoaded', () => {
+        loadSavedState();
+        renderSections();
+        updateFullscreenButtons();
+      });
+    </script>
+  </body>
+</html>
